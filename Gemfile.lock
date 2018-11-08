@@ -1,4 +1,5 @@
 GEM
+  remote: https://rubygems.org/
   specs:
     childprocess (0.9.0)
       ffi (~> 1.0, >= 1.0.11)
