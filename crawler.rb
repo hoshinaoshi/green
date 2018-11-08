@@ -36,7 +36,6 @@ class Crawler
 
     page_count.times do
       inspect_candidates
-      binding.pry
       next_page_btn =
         @driver.find_elements(:class, "mdl-pagination")[0]
           .find_elements(:class, "mdl-pagination__item")[-1]
