@@ -28,15 +28,15 @@ class Crawler
   end
 
   def find_candidates
-    candidate_count = @driver
-                      .find_element(:class, "number").text
-                      .split("/")[-1] # 分母
-                      .gsub(/\ |,/,{" " => "", "," => ""})
-                      .to_i
+    candidate_count = @driver.find_element(:class, "number").text
+                        .split("/")[-1] # 分母
+                        .gsub(/\ |,/,{" " => "", "," => ""})
+                        .to_i
     page_count = candidate_count / 100
 
     page_count.times do
       inspect_candidates
+      binding.pry
       next_page_btn =
         @driver.find_elements(:class, "mdl-pagination")[0]
           .find_elements(:class, "mdl-pagination__item")[-1]
@@ -49,16 +49,26 @@ class Crawler
   def inspect_candidates
     table = @driver.find_element(:class, "mdl-data-table--client-search")
     tbodies = table.find_elements(:class, "mdl-data-table--clickable")
-      tbodies.each do |tbody|
-        candidate_info = tbody.find_elements(:xpath, "tr")[0]
+    tbodies.each do |tbody|
+      candidate_info = tbody.find_elements(:xpath, "tr")[0]
 
-        candidate_univ = candidate_info.find_elements(:xpath, "td")[-1].text
-        candidate_job = candidate_info.find_elements(:xpath, "td")[4].text
-        candidate_check_button = candidate_info.find_elements(:xpath, "td")[0]
+      candidate_univ = candidate_info.find_elements(:xpath, "td")[-1].text
+      candidate_job = candidate_info.find_elements(:xpath, "td")[4].text
+      candidate_check_button = candidate_info.find_elements(:xpath, "td")[0]
 
-        candidate_check_button.click if
-          acceptable_university?(candidate_univ) && engineer?(candidate_job)
-      end
+      next unless engineer?(candidate_job)
+      candidate_check_button.click if acceptable_university?(candidate_univ)
+    end
+
+    return unless
+      /is-checked/.match(
+        @driver.find_element(:class, "mdl-data-table--client-search")
+          .find_element(:xpath, "thead")
+          .find_elements(:xpath, "tr")[0]
+          .find_elements(:xpath, "td")[0]
+          .find_element(:xpath, "label")
+          .attribute("class"))
+
     add_candidate_to_favorite_list
   rescue => e
     puts e and sleep 3
