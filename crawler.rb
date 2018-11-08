@@ -28,6 +28,25 @@ class Crawler
   end
 
   def find_candidates
+    candidate_count = @driver
+                      .find_element(:class, "number").text
+                      .split("/")[-1] # 分母
+                      .gsub(/\ |,/,{" " => "", "," => ""})
+                      .to_i
+    page_count = candidate_count / 100
+
+    page_count.times do
+      inspect_candidates
+      next_page_btn =
+        @driver.find_elements(:class, "mdl-pagination")[0]
+          .find_elements(:class, "mdl-pagination__item")[-1]
+      next_page_btn.click if next_page_btn.text == "次へ"
+      sleep 5
+    end
+  end
+
+  private
+  def inspect_candidates
     table = @driver.find_element(:class, "mdl-data-table--client-search")
     tbodies = table.find_elements(:class, "mdl-data-table--clickable")
       tbodies.each do |tbody|
@@ -40,7 +59,21 @@ class Crawler
         candidate_check_button.click if
           acceptable_university?(candidate_univ) && engineer?(candidate_job)
       end
+    add_candidate_to_favorite_list
+  rescue => e
+    puts e and sleep 3
+    retry
+  end
 
+  def acceptable_university?(univ)
+    @acceptable_universities.include?(univ)
+  end
+
+  def engineer?(job)
+    /開発/.match(job) && /Web/.match(job) ? true : false
+  end
+
+  def add_candidate_to_favorite_list
     driver.find_elements(:class, "mdl-data-table__actions")[0]
       .find_elements(:class, "mdl-button")[1] # list button
       .find_element(:xpath, "i")              # show pulldown menu
@@ -51,19 +84,6 @@ class Crawler
       .find_element(:xpath, "ul")
       .find_elements(:xpath, "li")[1] # エンジニア_2018採用チーム
       .click
-  rescue => e
-    puts e
-    sleep 3
-    retry
-  end
-
-  private
-  def acceptable_university?(univ)
-    @acceptable_universities.include?(univ)
-  end
-
-  def engineer?(job)
-    /開発/.match(job) && /Web/.match(job) ? true : false
   end
 end
 
